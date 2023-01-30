@@ -11,14 +11,6 @@ import javax.inject.Inject
 class GithubRepository @Inject constructor(
     private val service: GithubService
 ) {
-    private fun ApiUserListItem.toModel(): UserListingEntry =
-        UserListingEntry(
-            id,
-            login,
-            avatarUrl,
-            url
-        )
-
     suspend fun getUsers(since: Long): List<UserListingEntry> {
         return service.listUsers(since, 30).map { it.toModel() }
     }
@@ -55,4 +47,12 @@ class GithubRepository @Inject constructor(
             )
         }
     }
+
+    private fun ApiUserListItem.toModel(): UserListingEntry =
+        UserListingEntry(
+            id,
+            login,
+            avatarUrl,
+            url
+        )
 }

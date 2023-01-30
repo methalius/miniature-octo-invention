@@ -6,16 +6,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -26,6 +24,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UsersListingPage(
     listingViewModel: UserListingsViewModel = hiltViewModel(),
@@ -33,13 +32,22 @@ fun UsersListingPage(
 ) {
     val items by listingViewModel.users.collectAsState(emptyList())
     val paginationState by listingViewModel.paginationState
-    UserListing(
-        users = items,
-        paginationState = paginationState,
-        onUserTapped = onUserTapped,
-        onEndReached = {
-            listingViewModel.fetchMoreUsers()
-        })
+    Scaffold(
+        topBar = {
+            TopAppBar(title = {
+                Text(text = stringResource(R.string.listing_title))
+            })
+        }
+    ) {
+        UserListing(
+            modifier = Modifier.padding(it),
+            users = items,
+            paginationState = paginationState,
+            onUserTapped = onUserTapped,
+            onEndReached = {
+                listingViewModel.fetchMoreUsers()
+            })
+    }
 }
 
 @OptIn(FlowPreview::class)
@@ -56,7 +64,9 @@ fun UserListing(
         state = listState,
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(16.dp)
     ) {
         items(
             items = users,
@@ -90,7 +100,7 @@ fun UserListing(
                             .height(56.dp)
                     ) {
                         Text(
-                            text = "Oops, something wen't wrong",
+                            text = stringResource(id = R.string.generic_error_message_try_again),
                             Modifier.clickable { onEndReached() })
                     }
                 }
@@ -120,15 +130,15 @@ fun UserListingItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
             .padding(4.dp)
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(user.avatarUrl)
                 .crossfade(true)
-                .placeholder(R.drawable.baseline_portrait_24)
-                .fallback(R.drawable.baseline_broken_image_24)
+                .placeholder(R.drawable.ic_profile)
+                .fallback(R.drawable.ic_broken_image)
                 .build(),
             contentScale = ContentScale.Crop,
             modifier = Modifier

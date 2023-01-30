@@ -1,5 +1,6 @@
-package com.doivid.githubclient.di
+package com.doivid.githubclient.api.di
 
+import com.doivid.githubclient.api.AuthInterceptor
 import com.doivid.githubclient.api.GithubService
 import com.doivid.githubclient.api.OffsetDateTimeConverter
 import com.google.gson.Gson
@@ -8,6 +9,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttp
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -16,7 +18,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppModule {
+object ApiModule {
 
     @Provides
     @Singleton
@@ -27,10 +29,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun retrofit(gson: Gson): Retrofit =
+    fun okHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(AuthInterceptor())
+        .build()
+
+    @Provides
+    @Singleton
+    fun retrofit(gson: Gson, okHttpClient: OkHttpClient): Retrofit =
         Retrofit.Builder()
             .baseUrl("https://api.github.com/")
-            .client(OkHttpClient())
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
 
