@@ -6,11 +6,19 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.doivid.githubclient.domain.UserListingEntry
 import com.doivid.githubclient.ui.theme.GithubSampleClientTheme
+import com.doivid.githubclient.ui.user.listing.UserListing
+import com.doivid.githubclient.ui.user.profile.UserProfile
+
+val users = listOf(
+    UserListingEntry("daividssilverio", "https://avatars.githubusercontent.com/u/2173493?v=4", "")
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,29 +26,28 @@ class MainActivity : ComponentActivity() {
         setContent {
             GithubSampleClientTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    App("Android")
-                }
+                App()
             }
         }
     }
 }
 
 @Composable
-fun App(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    GithubSampleClientTheme {
-        App("Android")
+fun App(modifier: Modifier = Modifier) {
+    val navController = rememberNavController()
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        NavHost(navController = navController, startDestination = "home") {
+            composable("home") {
+                UserListing {
+                    navController.navigate("profile")
+                }
+            }
+            composable("profile") {
+                UserProfile(users.first())
+            }
+        }
     }
 }
