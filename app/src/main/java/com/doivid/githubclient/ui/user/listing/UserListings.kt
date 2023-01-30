@@ -64,7 +64,7 @@ fun UserListing(
         ) { entry ->
             UserListingItem(
                 modifier = Modifier.clickable {
-                    onUserTapped(entry.profileUrl)
+                    onUserTapped(entry.login)
                 }, entry
             )
         }

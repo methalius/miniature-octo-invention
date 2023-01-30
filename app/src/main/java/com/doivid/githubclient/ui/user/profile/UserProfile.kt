@@ -1,32 +1,12 @@
 package com.doivid.githubclient.ui.user.profile
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,39 +16,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.doivid.githubclient.R
 import com.doivid.githubclient.domain.UserDetails
-import com.doivid.githubclient.domain.UserListingEntry
 import com.doivid.githubclient.ui.theme.GithubSampleClientTheme
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserProfile(userListing: UserListingEntry) {
-    val user = userListing.let {
-        UserDetails(
-            login = "daividssilverio",
-            name = "Daivid S. Silverio",
-            bio = "I like small things",
-            id = 1,
-            avatarUrl = "https://avatars.githubusercontent.com/u/2173493?v=4",
-            company = "Toggl Track",
-            location = "Tokyo, Japan",
-            blog = "track.toggl.com",
-            twitterHandle = "daividssilverio",
-            email = "doivid@hey.com",
-            followers = 23,
-            following = 16,
-            publicRepositories = 34
-        )
-    }
+fun UserProfilePage(
+    userProfileViewModel: UserProfileViewModel = hiltViewModel(),
+    userLogin: String?,
+    onNavigationUp: () -> Unit
+) {
+    val userLoadableState =
+        userProfileViewModel.userLoadable.collectAsState(initial = Loadable.Uninitialized)
+    val userLoadable = userLoadableState.value
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { }, navigationIcon = {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "back icon")
-            })
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    Icon(
+                        Icons.Filled.ArrowBack,
+                        contentDescription = "back icon",
+                        modifier = Modifier.clickable { onNavigationUp() })
+                }
+            )
         }
     ) {
         Column(
@@ -77,11 +54,29 @@ fun UserProfile(userListing: UserListingEntry) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            UserProfileHeader(avatarUrl = user.avatarUrl, name = user.name, username = user.login)
-            user.bio?.let { bio -> Text(text = bio) }
-            UserProfileExtras(user)
+            when (userLoadable) {
+                is Loadable.Error -> {
+                    Text(text = userLoadable.exception.localizedMessage ?: "Oops, something went wrong, try again.")
+                }
+                Loadable.Uninitialized,
+                Loadable.Loading -> CircularProgressIndicator()
+                is Loadable.Loaded -> {
+                    UserProfile(userLoadable)
+                }
+            }
         }
     }
+    LaunchedEffect(userLogin) {
+        userProfileViewModel.loadUserDetails(userLogin)
+    }
+}
+
+@Composable
+fun UserProfile(userLoadable: Loadable.Loaded<UserDetails>) {
+    val user = userLoadable.value
+    UserProfileHeader(avatarUrl = user.avatarUrl, name = user.name, username = user.login)
+    user.bio?.let { bio -> Text(text = bio) }
+    UserProfileExtras(user)
 }
 
 @Composable
@@ -199,6 +194,24 @@ fun UserProfileNetwork(followers: Int, following: Int) {
 @Composable
 fun UserProfilePagePreview() {
     GithubSampleClientTheme(false) {
-        UserProfile(userListing = UserListingEntry(1, "", "", ""))
+        UserProfile(
+            Loadable.Loaded(
+                UserDetails(
+                    "daividssilverio",
+                    "Daivid",
+                    "Me",
+                    1,
+                    "http://abc",
+                    "company",
+                    "tokyo, japan",
+                    "none",
+                    "daividssilverio",
+                    "doivid@hey.com",
+                    12,
+                    24,
+                    3
+                )
+            )
+        )
     }
 }
