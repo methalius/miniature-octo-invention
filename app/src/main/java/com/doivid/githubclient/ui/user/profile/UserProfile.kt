@@ -199,6 +199,6 @@ fun UserProfileNetwork(followers: Int, following: Int) {
 @Composable
 fun UserProfilePagePreview() {
     GithubSampleClientTheme(false) {
-        UserProfile(userListing = UserListingEntry("", "", ""))
+        UserProfile(userListing = UserListingEntry(1, "", "", ""))
     }
 }

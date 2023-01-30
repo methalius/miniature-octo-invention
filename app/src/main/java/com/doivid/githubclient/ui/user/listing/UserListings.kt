@@ -2,31 +2,115 @@ package com.doivid.githubclient.ui.user.listing
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.doivid.githubclient.R
 import com.doivid.githubclient.domain.UserListingEntry
-import com.doivid.githubclient.ui.theme.GithubSampleClientTheme
-import com.doivid.githubclient.users
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+
+@Composable
+fun UsersListingPage(
+    listingViewModel: UserListingsViewModel = hiltViewModel(),
+    onUserTapped: (String) -> Unit
+) {
+    val items by listingViewModel.users.collectAsState(emptyList())
+    val paginationState by listingViewModel.paginationState
+    UserListing(
+        users = items,
+        paginationState = paginationState,
+        onUserTapped = onUserTapped,
+        onEndReached = {
+            listingViewModel.fetchMoreUsers()
+        })
+}
+
+@OptIn(FlowPreview::class)
+@Composable
+fun UserListing(
+    modifier: Modifier = Modifier,
+    users: List<UserListingEntry>,
+    paginationState: PaginationState,
+    onUserTapped: (String) -> Unit,
+    onEndReached: () -> Unit
+) {
+    val listState = rememberLazyListState()
+    LazyColumn(
+        state = listState,
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        items(
+            items = users,
+            key = { it.id }
+        ) { entry ->
+            UserListingItem(
+                modifier = Modifier.clickable {
+                    onUserTapped(entry.profileUrl)
+                }, entry
+            )
+        }
+
+        when (paginationState) {
+            PaginationState.LoadingFirstBatch -> item {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            PaginationState.FetchingMore -> item {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                )
+            }
+            PaginationState.Error -> {
+                item {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    ) {
+                        Text(
+                            text = "Oops, something wen't wrong",
+                            Modifier.clickable { onEndReached() })
+                    }
+                }
+            }
+            PaginationState.Idle,
+            PaginationState.Done -> {
+            }
+        }
+    }
+
+    LaunchedEffect(listState, paginationState) {
+        snapshotFlow { listState.layoutInfo }.debounce(300).collectLatest { layoutInfo ->
+            val lastVisibleItemIndex =
+                layoutInfo.visibleItemsInfo.lastOrNull() ?: return@collectLatest
+            if ((layoutInfo.totalItemsCount - lastVisibleItemIndex.index) < 10 && paginationState == PaginationState.Idle) {
+                onEndReached()
+            }
+        }
+    }
+}
 
 @Composable
 fun UserListingItem(
@@ -59,44 +143,5 @@ fun UserListingItem(
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-    }
-}
-
-
-@Composable
-fun UserListing(
-    modifier: Modifier = Modifier,
-    onUserTapped: (String) -> Unit
-) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        items(users) {
-            UserListingItem(
-                modifier = Modifier.clickable {
-                    onUserTapped(it.profileUrl)
-                }, it
-            )
-        }
-    }
-}
-
-
-
-@Preview(showBackground = true, heightDp = 400)
-@Composable
-fun UserListingPreviewLightMode() {
-    GithubSampleClientTheme(false) {
-        UserListing {}
-    }
-}
-
-@Preview(showBackground = true, heightDp = 400)
-@Composable
-fun UserListingPreviewDarkMode() {
-    GithubSampleClientTheme(true) {
-        UserListing {}
     }
 }

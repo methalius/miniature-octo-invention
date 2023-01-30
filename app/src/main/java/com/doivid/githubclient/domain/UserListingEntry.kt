@@ -3,6 +3,7 @@ package com.doivid.githubclient.domain
 import android.net.Uri
 
 data class UserListingEntry(
+    val id: Long,
     val login: String,
     val avatarUrl: String?,
     val profileUrl: String

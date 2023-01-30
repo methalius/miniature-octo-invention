@@ -14,12 +14,15 @@ import androidx.navigation.compose.rememberNavController
 import com.doivid.githubclient.domain.UserListingEntry
 import com.doivid.githubclient.ui.theme.GithubSampleClientTheme
 import com.doivid.githubclient.ui.user.listing.UserListing
+import com.doivid.githubclient.ui.user.listing.UsersListingPage
 import com.doivid.githubclient.ui.user.profile.UserProfile
+import dagger.hilt.android.AndroidEntryPoint
 
 val users = listOf(
-    UserListingEntry("daividssilverio", "https://avatars.githubusercontent.com/u/2173493?v=4", "")
+    UserListingEntry(1,"daividssilverio", "https://avatars.githubusercontent.com/u/2173493?v=4", "")
 )
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +44,7 @@ fun App(modifier: Modifier = Modifier) {
     ) {
         NavHost(navController = navController, startDestination = "home") {
             composable("home") {
-                UserListing {
+                UsersListingPage {
                     navController.navigate("profile")
                 }
             }
