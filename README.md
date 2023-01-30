@@ -1,7 +1,8 @@
 # bookish-couscous (Github Sample Client For bitFlyer Japan)
 
 ## Instructions
- - You can run the app as is and it should work fine.
+ - Build the app using Android Studio Electric Eel | 2022.1.1
+ - You can run the app as is and it should work fine
  - You can also add your GH personal token to `app/src/main/java/com/doivid/githubclient/api/AuthInterceptor.kt` in order to increase the number of requests you can made before the Github API starts error-ing out with 403 http response codes
 
 ## Missing parts
