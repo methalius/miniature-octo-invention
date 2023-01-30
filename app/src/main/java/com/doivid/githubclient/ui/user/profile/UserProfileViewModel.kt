@@ -4,9 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.doivid.githubclient.data.GithubRepository
+import com.doivid.githubclient.domain.GithubEvent
 import com.doivid.githubclient.domain.UserDetails
-import com.doivid.githubclient.domain.UserListingEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -29,8 +30,11 @@ sealed class Loadable<out T> {
 class UserProfileViewModel @Inject constructor(private val repository: GithubRepository) : ViewModel() {
     private val _userLoadable: MutableStateFlow<Loadable<UserDetails>> =
         MutableStateFlow(Loadable.Uninitialized)
+    private val _eventsLoadable: MutableStateFlow<Loadable<List<GithubEvent>>> =
+        MutableStateFlow(Loadable.Uninitialized)
 
     val userLoadable: Flow<Loadable<UserDetails>> = _userLoadable
+    val eventsLoadable: Flow<Loadable<List<GithubEvent>>> = _eventsLoadable
 
     fun loadUserDetails(userLogin: String?) = viewModelScope.launch {
         if (userLogin.isNullOrBlank()) {
@@ -38,11 +42,22 @@ class UserProfileViewModel @Inject constructor(private val repository: GithubRep
             return@launch
         }
         _userLoadable.value = Loadable.Loading
+        _eventsLoadable.value = Loadable.Loading
+        val getUser = async { repository.getUser(userLogin) }
+        val getEvents = async { repository.getEventsForUser(userLogin) }
+
         try {
-            _userLoadable.value = Loadable.Loaded(repository.getUser(userLogin = userLogin))
+            _userLoadable.value = Loadable.Loaded(getUser.await())
         } catch (ex: Exception) {
             Log.e("xxaa", "failed to load user", ex)
             _userLoadable.value = Loadable.Error(ex)
+        }
+
+        try {
+            _eventsLoadable.value = Loadable.Loaded(getEvents.await())
+        } catch (ex: Exception) {
+            Log.d("xxaa", "failed to load user's events", ex)
+            _eventsLoadable.value = Loadable.Error(ex)
         }
     }
 }

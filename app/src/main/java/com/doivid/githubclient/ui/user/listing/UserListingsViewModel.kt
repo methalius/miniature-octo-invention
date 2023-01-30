@@ -39,20 +39,12 @@ class UserListingsViewModel @Inject constructor(
         try {
             val response = repository.getUsers(_since)
             val mightHaveMore = response.isNotEmpty()
-            _users.update { currentList ->
-                currentList + response.map {
-                    UserListingEntry(
-                        it.id,
-                        it.login,
-                        it.avatarUrl,
-                        it.url
-                    )
-                }
-            }
+            _users.update { currentList -> currentList + response }
             if (mightHaveMore) {
                 _since = response.last().id
             }
-            _paginationState.value = if (mightHaveMore) PaginationState.Idle else PaginationState.Done
+            _paginationState.value =
+                if (mightHaveMore) PaginationState.Idle else PaginationState.Done
         } catch (ex: java.lang.Exception) {
             _paginationState.value = PaginationState.Error
         }

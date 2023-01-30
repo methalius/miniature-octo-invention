@@ -1,5 +1,6 @@
 package com.doivid.githubclient.api
 
+import com.doivid.githubclient.api.models.ApiGithubEvent
 import com.doivid.githubclient.api.models.ApiUserDetails
 import com.doivid.githubclient.api.models.ApiUserListItem
 import retrofit2.http.GET
@@ -15,4 +16,7 @@ interface GithubService {
 
     @GET("/users/{userLogin}")
     suspend fun getUser(@Path("userLogin") userLogin: String): ApiUserDetails
+
+    @GET("/users/{userLogin}/events/public")
+    suspend fun getUserPublicEvents(@Path("userLogin") userLogin: String): List<ApiGithubEvent>
 }

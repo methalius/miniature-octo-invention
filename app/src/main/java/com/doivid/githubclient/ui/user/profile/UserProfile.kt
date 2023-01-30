@@ -2,6 +2,8 @@ package com.doivid.githubclient.ui.user.profile
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.*
@@ -20,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.doivid.githubclient.R
+import com.doivid.githubclient.domain.GithubEvent
 import com.doivid.githubclient.domain.UserDetails
 import com.doivid.githubclient.ui.theme.GithubSampleClientTheme
 
@@ -33,7 +36,10 @@ fun UserProfilePage(
 ) {
     val userLoadableState =
         userProfileViewModel.userLoadable.collectAsState(initial = Loadable.Uninitialized)
+    val eventsLoadableState =
+        userProfileViewModel.eventsLoadable.collectAsState(initial = Loadable.Uninitialized)
     val userLoadable = userLoadableState.value
+    val eventsLoadable = eventsLoadableState.value
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -52,11 +58,13 @@ fun UserProfilePage(
             modifier = Modifier
                 .padding(it)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
         ) {
             when (userLoadable) {
                 is Loadable.Error -> {
-                    Text(text = userLoadable.exception.localizedMessage ?: "Oops, something went wrong, try again.")
+                    Text(
+                        text = userLoadable.exception.localizedMessage
+                            ?: "Oops, something went wrong, try again."
+                    )
                 }
                 Loadable.Uninitialized,
                 Loadable.Loading -> CircularProgressIndicator()
@@ -64,10 +72,45 @@ fun UserProfilePage(
                     UserProfile(userLoadable)
                 }
             }
+
+            when (eventsLoadable) {
+                is Loadable.Error -> {
+                    Text(
+                        text = eventsLoadable.exception.localizedMessage
+                            ?: "Oops, something went wrong, try again."
+                    )
+                }
+                Loadable.Loading,
+                Loadable.Uninitialized -> CircularProgressIndicator()
+                is Loadable.Loaded -> UserActivity(eventsLoadable)
+            }
         }
     }
     LaunchedEffect(userLogin) {
         userProfileViewModel.loadUserDetails(userLogin)
+    }
+}
+
+@Composable
+fun UserActivity(eventsLoadable: Loadable.Loaded<List<GithubEvent>>) {
+    val events = eventsLoadable.value
+    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        items(events) {
+            GithubEventListItem(it)
+        }
+    }
+}
+
+@Composable
+fun GithubEventListItem(event: GithubEvent) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(8.dp)) {
+        Text(text = "type: ${event.type}")
+        Text(text = "who: ${event.actor.login}")
+        Text(text = "where: ${event.repository?.name}")
+        Text(text = "when: ${event.createdAt}")
     }
 }
 
@@ -82,7 +125,7 @@ fun UserProfile(userLoadable: Loadable.Loaded<UserDetails>) {
 @Composable
 fun UserProfileHeader(
     avatarUrl: String?,
-    name: String,
+    name: String?,
     username: String
 ) {
     Row(
@@ -108,7 +151,7 @@ fun UserProfileHeader(
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = name,
+                text = name ?: username,
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

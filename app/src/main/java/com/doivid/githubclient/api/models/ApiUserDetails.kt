@@ -20,7 +20,7 @@ data class ApiUserDetails(
     val eventsUrl: String,
     @SerializedName("received_events_url")
     val receivedEventsUrl: String,
-    val name: String,
+    val name: String?,
     val company: String?,
     val blog: String?,
     val location: String?,
